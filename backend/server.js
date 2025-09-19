@@ -12,6 +12,19 @@ const app = express();
 // maybe some authentication, logging, parsing json body
 app.use(express.json()); 
 
+
+// our custom middleware
+
+
+app.use ((req, res, next) => {
+    console.log("hey we hit a req, the methd is", req.method); // every time request hits server this line will run
+    next(); //  by calling next u are saying pass controls to the next middleware or route handler
+
+
+});
+
+
+
 const PORT = process.env.PORT 
 
 async function initDB() {
@@ -34,12 +47,15 @@ async function initDB() {
     }
 }
 
-
+ 
 
 app.post("/api/transactions", async (req, res) => {
     // title, amount, category, user_id
     try{
         const{title, amount, category, user_id} = req.body;
+        if(!title || amount == undefined || !category || !user_id){
+            return res.status(400).json({error: "Missing required fields"});
+        }
 
     }catch (error){
 
