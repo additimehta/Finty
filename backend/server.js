@@ -17,7 +17,7 @@ app.use(express.json());
 
 
 app.use ((req, res, next) => {
-    console.log("hey we hit a req, the methd is", req.method); // every time request hits server this line will run
+    console.log("hey we hit a req, the method is", req.method); // every time request hits server this line will run
     next(); //  by calling next u are saying pass controls to the next middleware or route handler
 
 
@@ -39,7 +39,8 @@ async function initDB() {
         )`
 
         // DECIMAl(10,2) means total 10 digits, 2 after decimal point
-        console.log("Table created successfully");
+        console.log("DB initalized successfully");
+
     } catch(error) {
         console.log("Error creating table:", error);
         process.exit(1); // 1 indicates failure
@@ -47,7 +48,33 @@ async function initDB() {
     }
 }
 
- 
+app.get("/", (req, res) => {
+    console.log("it's working")
+});
+
+
+
+
+app.get("/api/transactions/:userId", async (req, res) => {
+
+    try{
+        const {userId} = req.params;
+        console.log(userId);
+
+        const transactions = await sql `
+        SELECT * FROM transactions WHERE user_id = ${userId} ORDER BY created_at DESC
+        `
+
+        res.status(200).json(transactions);
+
+
+    } catch(error){
+        console.log("Error getting the transaction", error)
+        res.status(500).json({error: "Internal server error"});
+
+    }
+
+});
 
 app.post("/api/transactions", async (req, res) => {
     // title, amount, category, user_id
@@ -57,11 +84,62 @@ app.post("/api/transactions", async (req, res) => {
             return res.status(400).json({error: "Missing required fields"});
         }
 
+        const transaction = await sql
+        `INSERT INTO transactions (user_id, title, amount, category)
+         VALUES (${user_id}, ${title}, ${amount}, ${category})
+         RETURNING *
+         `
+
+
+        console.log(transaction);
+        res.status(201).json(transaction[0]);
+
+
+        
+
     }catch (error){
+        console.log("Error creating the transaction", error)
+        res.status(500).json({error: "Internal server error"});
+
+
 
     }
 });
+
+
+app.delete("/api/transactions/:id", async (req, res) => {
+
+    try{
+        // grab id from url
+        const {id} = req.params;
+
+        console.log(typeof id);
+        
+
+        const transaction = await sql `
+        DELETE FROM transactions WHERE id = ${id} RETURNING *
+        `
+
+        // no transaction found 
+        if(transaction.length === 0){
+            return res.status(404).json({error: "Transaction not found"});
+        }
+
+        res.status(200).json({message: "Transaction deleted successfully"});
+
+    }catch (error){
+        console.log("Error deleting the transaction", error)
+        res.status(500).json({error: "Internal server error"});
+
+    }
+
+});
+
+
+
+
 console.log("my port is: " ,process.env.PORT)
+    
 
 
 initDB().then(() => {
