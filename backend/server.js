@@ -59,7 +59,9 @@ app.get("/api/transactions/:userId", async (req, res) => {
 
     try{
         const {userId} = req.params;
-        console.log(userId);
+
+
+
 
         const transactions = await sql `
         SELECT * FROM transactions WHERE user_id = ${userId} ORDER BY created_at DESC
@@ -113,7 +115,13 @@ app.delete("/api/transactions/:id", async (req, res) => {
         // grab id from url
         const {id} = req.params;
 
-        console.log(typeof id);
+        
+        // if id is not a number because id cannot be a string
+        // note that even if the id was string it would still work but the request would be invalid 
+        if(isNaN(parseInt(id))){
+            return res.status(400).json({message: "Invalid user ID"});
+        }
+
         
 
         const transaction = await sql `
@@ -135,6 +143,23 @@ app.delete("/api/transactions/:id", async (req, res) => {
 
 });
 
+
+app.get("/api/transactions/summary/:userId", async (req, res) => {
+    try{
+        const {userId} = req.params;
+
+        const balanceResult =  await sql `
+
+        SELECT COALESCE(SUM(amount), 0) AS balance FROM transactions WHERE user_id = ${userId}
+        `
+
+    }catch (error){
+        console.log("Error getting the transaction summary", error)
+        res.status(500).json({error: "Internal server error"});
+
+    }
+
+});
 
 
 
