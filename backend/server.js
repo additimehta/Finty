@@ -150,8 +150,32 @@ app.get("/api/transactions/summary/:userId", async (req, res) => {
 
         const balanceResult =  await sql `
 
-        SELECT COALESCE(SUM(amount), 0) AS balance FROM transactions WHERE user_id = ${userId}
+        SELECT COALESCE(SUM(amount), 0) as balance FROM transactions WHERE user_id = ${userId}
         `
+
+        const incomeResult = await sql
+        `
+            SELECT COALESCE(SUM(amount), 0) as income FROM transactions
+            WHERE user_id = ${userId} AND amount > 0
+        
+        `
+
+        const expenseResult = await sql
+        `
+            SELECT COALESCE(SUM(amount), 0) as expenses FROM transactions
+            WHERE user_id = ${userId} AND amount < 0
+        `
+
+        res.status(200).json({
+            balance: balanceResult[0].balance,
+            income: incomeResult[0].income,
+            expenses: expenseResult[0].expenses,
+            
+        })
+
+
+        // income + expense - amount 
+        
 
     }catch (error){
         console.log("Error getting the transaction summary", error)
